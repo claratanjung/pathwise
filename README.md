@@ -1,22 +1,60 @@
-# RuteCerdas AI — React Prototype
+# RuteCerdas AI — React + Backend
+
+Website perbandingan rute dengan AI. Frontend React (Vite) + backend Express.
 
 ## Menjalankan project
 
 ```bash
 npm install
+```
+
+Jalankan dua proses (terminal terpisah):
+
+```bash
+# Terminal 1: backend API (port 3000)
+npm run server
+
+# Terminal 2: frontend Vite (port 5173)
 npm run dev
 ```
 
-Buka URL Vite yang muncul, biasanya:
-`http://localhost:5173`
+Buka URL Vite yang muncul, biasanya `http://localhost:5173`.
+Vite mem-proxy `/api` ke backend, jadi frontend tidak perlu konfigurasi URL API.
 
-## Menghubungkan API
+## Struktur backend
 
-Buat file `.env` di root project:
+```
+server/
+  index.js                  entry point express
+  config.js                 konfigurasi (PORT, GROQ_API_KEY, GROQ_MODEL)
+  routes/routeRouter.js     endpoint POST /api/route
+  services/             
+    aiService.js            orkestrasi prompt -> AI -> normalisasi
+    groqClient.js           klien Groq (belum terpasang, tinggal diisi)
+  prompts/routePrompt.js    builder system/user prompt
+  utils/parseJson.js        ekstraksi + normalisasi JSON dari model
+```
+
+`groq-sdk` sengaja belum dipasang. Setelah siap, isi `server/services/groqClient.js`
+untuk memanggil Groq dengan model `openai/gpt-oss-120b`, lalu `npm install groq-sdk`.
+
+## Konfigurasi AI
+
+Buat file `.env` di root project (contoh: `.env.example`):
 
 ```env
-VITE_API_URL=http://localhost:3000/api/route
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=openai/gpt-oss-120b
+PORT=3000
 ```
+
+Selama `GROQ_API_KEY` kosong/backend belum terimplementasi, endpoint `/api/route`
+mengembalikan error 501 dan frontend otomatis jatuh ke data simulasi.
+
+### Endpoint
+
+- `GET /api/health` — cek status server.
+- `POST /api/route` — analisis rute.
 
 Frontend mengirim POST JSON dengan format:
 
@@ -63,11 +101,10 @@ Contoh respons berhasil:
 }
 ```
 
-Jika API gagal atau belum tersedia, aplikasi otomatis memakai data simulasi agar tampilan tetap dapat diuji.
+Jika informasi kurang, respons berisi `clarification` saja.
 
 ## Catatan
 
 - API key jangan ditaruh di React/frontend.
-- Gunakan backend untuk memanggil Gemini/OpenAI dan routing API.
-- Data rute pada fallback hanya untuk demo, bukan jadwal transportasi nyata.
-"# pathwise" 
+- Data rute dari AI adalah estimasi, bukan jadwal transportasi real-time.
+- Data fallback frontend hanya untuk demo.
