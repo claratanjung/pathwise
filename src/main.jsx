@@ -26,10 +26,27 @@ const mockResult = {
       transfers: "2 kali",
       walking: "12 menit",
       steps: [
-        ["Berjalan ke halte terdekat", "07.00 – 07.10", "Jalan kaki"],
-        ["Naik bus menuju stasiun", "07.10 – 07.35", "Bus"],
-        ["Transit di stasiun", "07.35 – 07.45", "Transit"],
-        ["Naik KRL menuju stasiun tujuan", "07.45 – 08.35", "KRL"]
+        {
+          instruction: "Jalan kaki ke Halte Sukasari",
+          mode: "Jalan kaki",
+          time: "07.00 – 07.10",
+          duration: "10 menit",
+          stops: []
+        },
+        {
+          instruction: "Naik bus jurusan Stasiun Bogor",
+          mode: "Bus",
+          time: "07.10 – 07.35",
+          duration: "25 menit",
+          stops: ["Halte Sukasari", "Taman Kencana", "Baranangsiang", "Stasiun Bogor"]
+        },
+        {
+          instruction: "Naik KRL jurusan Jakarta Kota",
+          mode: "KRL",
+          time: "07.35 – 08.35",
+          duration: "45 menit",
+          stops: ["Stasiun Bogor", "Bojong (Paledang)", "Cilebut", "Citayam", "Depok", "Depok Baru"]
+        }
       ]
     },
     {
@@ -41,8 +58,20 @@ const mockResult = {
       transfers: "1 kali",
       walking: "5 menit",
       steps: [
-        ["Menuju stasiun dengan kendaraan penghubung", "07.00 – 07.15", "Transportasi"],
-        ["Naik KRL menuju stasiun tujuan", "07.15 – 08.15", "KRL"]
+        {
+          instruction: "Naik ojek online ke Stasiun Bogor",
+          mode: "Transportasi",
+          time: "07.00 – 07.15",
+          duration: "15 menit",
+          stops: []
+        },
+        {
+          instruction: "Naik KRL jurusan Jakarta Kota, lanjut transit ke KRL jurusan Bekasi",
+          mode: "KRL",
+          time: "07.15 – 08.15",
+          duration: "1 jam",
+          stops: ["Stasiun Bogor", "Bojong (Paledang)", "Cilebut", "Citayam", "Depok", "Depok Baru", "Pondok Cina", "Universitas Indonesia", "Pasar Minggu"]
+        }
       ]
     }
   ]
@@ -342,6 +371,15 @@ function Feature({ icon, title, text }) {
 }
 
 function ResultPage({ result, activeRoute, selectedRoute, setSelectedRoute, onBack, notice, setPage }) {
+  const [openStops, setOpenStops] = useState({});
+
+  const toggleStops = (key) =>
+    setOpenStops((current) => ({ ...current, [key]: !current[key] }));
+
+  useEffect(() => {
+    setOpenStops({});
+  }, [selectedRoute]);
+
   return (
     <section className="result-page">
       <div className="page-heading-row">
@@ -425,15 +463,52 @@ function ResultPage({ result, activeRoute, selectedRoute, setSelectedRoute, onBa
 
           <h3 className="timeline-title">Urutan perjalanan</h3>
           <div className="timeline">
-            {(activeRoute.steps || []).map(([title, time, mode], index) => (
-              <div className="timeline-item" key={`${title}-${index}`}>
-                <div className="timeline-dot">{index + 1}</div>
-                <div className="timeline-content">
-                  <div className="timeline-top"><strong>{title}</strong><span>{mode}</span></div>
-                  <p>{time}</p>
+            {(activeRoute.steps || []).map((step, index) => {
+              const item = Array.isArray(step)
+                ? (([instruction, time, mode]) => ({ instruction, time, mode, duration: "", stops: [] }))(step)
+                : step;
+              return (
+                <div className="timeline-item" key={`${item.instruction || ""}-${index}`}>
+                  <div className="timeline-dot">{index + 1}</div>
+                  <div className="timeline-content">
+                    <div className="timeline-top"><strong>{item.instruction}</strong><span>{item.mode}</span></div>
+                    <p>{item.duration ? `${item.duration} · ` : ""}{item.time}</p>
+                    {Array.isArray(item.stops) && item.stops.length > 0 && (
+                      <div className="stops-dropdown">
+                        <button
+                          type="button"
+                          className="stops-toggle"
+                          aria-expanded={!!openStops[index]}
+                          onClick={() => toggleStops(index)}
+                        >
+                          <span className="stops-toggle-label">
+                            🚉 Urutan stasiun
+                            <em>{item.stops.length} stasiun</em>
+                          </span>
+                          <span className={`stops-toggle-icon ${openStops[index] ? "open" : ""}`}>⌄</span>
+                        </button>
+
+                        {openStops[index] && (
+                          <ol className="stops-list">
+                            {item.stops.map((stop, i) => (
+                              <li
+                                key={`${stop}-${i}`}
+                                className={`stops-list-item ${i === 0 ? "is-first" : ""} ${i === item.stops.length - 1 ? "is-last" : ""}`}
+                              >
+                                <span className="stops-marker">{i + 1}</span>
+                                <span className="stops-name">{stop}</span>
+                                {i === 0 && <span className="stops-tag">Berangkat</span>}
+                                {i === item.stops.length - 1 && <span className="stops-tag end">Tiba</span>}
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <button className="primary-button" onClick={() => setPage("home")}>Cari rute lain <span>→</span></button>

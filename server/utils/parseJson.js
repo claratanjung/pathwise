@@ -56,7 +56,19 @@ export function normalizeRouteResult(input) {
       cost: route.cost || "-",
       transfers: route.transfers || "-",
       walking: route.walking || "-",
-      steps: Array.isArray(route.steps) ? route.steps : []
+      steps: (Array.isArray(route.steps) ? route.steps : []).map((step) => {
+        if (Array.isArray(step)) {
+          const [instruction = "", time = "", mode = ""] = step;
+          return { instruction, time, mode, duration: "", stops: [] };
+        }
+        return {
+          instruction: step.instruction || "",
+          mode: step.mode || "",
+          time: step.time || "",
+          duration: step.duration || "",
+          stops: []
+        };
+      })
     }))
   };
 }

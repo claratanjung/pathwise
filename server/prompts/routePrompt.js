@@ -19,9 +19,12 @@ export function buildSystemPrompt({ preferences = [] }) {
     "1. Ekstrak asal, tujuan, waktu berangkat, dan budget dari cerita pengguna. Jika tidak disebutkan, isi dengan 'Fleksibel' atau 'Belum ditentukan'.\n" +
     "2. Jika cerita tidak cukup untuk menentukan rute (misal tujuan tidak jelas), kembalikan JSON hanya dengan field 'clarification' berisi pertanyaan singkat berbahasa Indonesia.\n" +
     "3. Buat 1-3 opsi rute yang realistis dan masuk akal menggunakan moda transportasi umum (bus, KRL/kereta, MRT, angkot, dll). Hormati preferensi pengguna.\n" +
-    "4. Setiap langkah rute disusun berurutan dari berangkat sampai tiba.\n" +
-    "5. Seluruh teks menggunakan Bahasa Indonesia.\n" +
-    "6. Keluarkan HANYA objek JSON, tanpa teks lain dan tanpa markdown.\n\n" +
+"4. Setiap langkah rute disusun berurutan dari berangkat sampai tiba.\n" +
+    "5. JANGAN mengarang daftar stasiun atau 'stops'. Biarkan 'stops' kosong karena backend akan mengisinya dari data stasiun KRL resmi.\n" +
+    "6. Jika terjadi transit/ganti kendaraan, buat langkah terpisah untuk rute lanjutan tanpa menulis daftar stasiun.\n" +
+    "7. Seluruh teks menggunakan Bahasa Indonesia.\n" +
+    "8. Sertakan nama lokasi yang jelas untuk 'origin' dan 'destination' (contoh: Bogor, Depok, Pasar Minggu, Universitas Indonesia) agar backend dapat mencocokkannya dengan stasiun.\n" +
+    "9. Keluarkan HANYA objek JSON, tanpa teks lain dan tanpa markdown.\n\n" +
     "Skema JSON:\n" +
     '{\n' +
     '  "origin": "string",\n' +
@@ -37,8 +40,16 @@ export function buildSystemPrompt({ preferences = [] }) {
     '      "cost": "string",\n' +
     '      "transfers": "string",\n' +
     '      "walking": "string",\n' +
-    '      "steps": [["tindakan", "waktu", "moda"]]\n' +
-    '    }\n' +
+    '      "steps": [\n' +
+    '        {\n' +
+    '          "instruction": "string",\n' +
+    '          "mode": "string",\n' +
+    '          "time": "string",\n' +
+    '          "duration": "string",\n' +
+    '          "stops": ["string", "string", "string"]\n' +
+    '        }\n' +
+    "      ]\n" +
+    "    }\n" +
     "  ]\n" +
     "}"
   );
