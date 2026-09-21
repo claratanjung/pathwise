@@ -1,4 +1,4 @@
-import { generateRouteInfo } from "./groqClient.js";
+import { generateRouteInfo } from "./geminiClient.js";
 import { buildSystemPrompt, buildUserMessage } from "../prompts/routePrompt.js";
 import { normalizeRouteResult } from "../utils/parseJson.js";
 import { config } from "../config.js";
@@ -43,12 +43,11 @@ async function enrichWithGoogleMaps(result) {
 }
 
 export async function analyzeRoute(payload) {
-  const messages = [
-    { role: "system", content: buildSystemPrompt(payload) },
-    { role: "user", content: buildUserMessage(payload) }
-  ];
+  // Pisahkan prompt untuk Gemini (System Instruction terpisah dengan User Message)
+  const systemInstruction = buildSystemPrompt(payload);
+  const userMessage = buildUserMessage(payload);
 
-  const raw = await generateRouteInfo({ messages });
+  const raw = await generateRouteInfo({ systemInstruction, userMessage });
   let result = normalizeRouteResult(raw);
 
   if (result.clarification) return result;
