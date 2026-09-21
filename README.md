@@ -26,11 +26,12 @@ Vite mem-proxy `/api` ke backend, jadi frontend tidak perlu konfigurasi URL API.
 ```
 server/
   index.js                  entry point express
-  config.js                 konfigurasi (PORT, GROQ_API_KEY, GROQ_MODEL)
+  config.js                 konfigurasi (PORT, GROQ_API_KEY, GROQ_MODEL, GOOGLE_MAPS_API_KEY)
   routes/routeRouter.js     endpoint POST /api/route
   services/             
-    aiService.js            orkestrasi prompt -> AI -> normalisasi
-    groqClient.js           klien Groq (belum terpasang, tinggal diisi)
+    aiService.js            orkestrasi prompt -> AI -> Google Maps
+    googleMaps.js           klien Google Maps Routes API (transit)
+    groqClient.js           klien Groq (LLM NLP)
   prompts/routePrompt.js    builder system/user prompt
   utils/parseJson.js        ekstraksi + normalisasi JSON dari model
 ```
@@ -46,10 +47,15 @@ Buat file `.env` di root project (contoh: `.env.example`):
 GROQ_API_KEY=your_groq_api_key_here
 GROQ_MODEL=openai/gpt-oss-120b
 PORT=3000
+
+# Google Maps Platform (aktifkan Maps Routes API)
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 ```
 
-Selama `GROQ_API_KEY` kosong/backend belum terimplementasi, endpoint `/api/route`
-mengembalikan error 501 dan frontend otomatis jatuh ke data simulasi.
+Selama `GROQ_API_KEY` kosong, endpoint `/api/route` mengembalikan error 501 dan
+frontend jatuh ke data simulasi. Jika `GOOGLE_MAPS_API_KEY` diisi, rute transit
+dihitung real oleh Google Maps Routes API; setiap leg transit menampilkan stasiun
+berangkat/tiba dari Google.
 
 ### Endpoint
 

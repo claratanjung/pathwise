@@ -371,15 +371,6 @@ function Feature({ icon, title, text }) {
 }
 
 function ResultPage({ result, activeRoute, selectedRoute, setSelectedRoute, onBack, notice, setPage }) {
-  const [openStops, setOpenStops] = useState({});
-
-  const toggleStops = (key) =>
-    setOpenStops((current) => ({ ...current, [key]: !current[key] }));
-
-  useEffect(() => {
-    setOpenStops({});
-  }, [selectedRoute]);
-
   return (
     <section className="result-page">
       <div className="page-heading-row">
@@ -463,51 +454,42 @@ function ResultPage({ result, activeRoute, selectedRoute, setSelectedRoute, onBa
 
           <h3 className="timeline-title">Urutan perjalanan</h3>
           <div className="timeline">
-            {(activeRoute.steps || []).map((step, index) => {
+            {(activeRoute.steps || []).flatMap((step, index) => {
               const item = Array.isArray(step)
                 ? (([instruction, time, mode]) => ({ instruction, time, mode, duration: "", stops: [] }))(step)
                 : step;
-              return (
-                <div className="timeline-item" key={`${item.instruction || ""}-${index}`}>
+              const stops = Array.isArray(item.stops) ? item.stops : [];
+
+              const rows = [
+                <div className="timeline-item" key={`step-${index}`}>
                   <div className="timeline-dot">{index + 1}</div>
                   <div className="timeline-content">
                     <div className="timeline-top"><strong>{item.instruction}</strong><span>{item.mode}</span></div>
                     <p>{item.duration ? `${item.duration} · ` : ""}{item.time}</p>
-                    {Array.isArray(item.stops) && item.stops.length > 0 && (
-                      <div className="stops-dropdown">
-                        <button
-                          type="button"
-                          className="stops-toggle"
-                          aria-expanded={!!openStops[index]}
-                          onClick={() => toggleStops(index)}
-                        >
-                          <span className="stops-toggle-label">
-                            🚉 Urutan stasiun
-                            <em>{item.stops.length} stasiun</em>
-                          </span>
-                          <span className={`stops-toggle-icon ${openStops[index] ? "open" : ""}`}>⌄</span>
-                        </button>
-
-                        {openStops[index] && (
-                          <ol className="stops-list">
-                            {item.stops.map((stop, i) => (
-                              <li
-                                key={`${stop}-${i}`}
-                                className={`stops-list-item ${i === 0 ? "is-first" : ""} ${i === item.stops.length - 1 ? "is-last" : ""}`}
-                              >
-                                <span className="stops-marker">{i + 1}</span>
-                                <span className="stops-name">{stop}</span>
-                                {i === 0 && <span className="stops-tag">Berangkat</span>}
-                                {i === item.stops.length - 1 && <span className="stops-tag end">Tiba</span>}
-                              </li>
-                            ))}
-                          </ol>
-                        )}
-                      </div>
+                    {stops.length > 0 && (
+                      <span className="stop-sequence-label">🚉 Urutan stasiun</span>
                     )}
                   </div>
                 </div>
-              );
+              ];
+
+              stops.forEach((stop, i) => {
+                rows.push(
+                  <div
+                    className={`timeline-item timeline-station ${i === 0 ? "is-first" : ""} ${i === stops.length - 1 ? "is-last" : ""}`}
+                    key={`station-${index}-${i}`}
+                  >
+                    <div className="station-marker"><span className="station-dot" /></div>
+                    <div className="timeline-content">
+                      <span className="station-name">{stop}</span>
+                      {i === 0 && <span className="stops-tag">Berangkat</span>}
+                      {i === stops.length - 1 && <span className="stops-tag end">Tiba</span>}
+                    </div>
+                  </div>
+                );
+              });
+
+              return rows;
             })}
           </div>
 

@@ -18,9 +18,9 @@ export function buildSystemPrompt({ preferences = [] }) {
     "Ikuti aturan ini:\n" +
     "1. Ekstrak asal, tujuan, waktu berangkat, dan budget dari cerita pengguna. Jika tidak disebutkan, isi dengan 'Fleksibel' atau 'Belum ditentukan'.\n" +
     "2. Jika cerita tidak cukup untuk menentukan rute (misal tujuan tidak jelas), kembalikan JSON hanya dengan field 'clarification' berisi pertanyaan singkat berbahasa Indonesia.\n" +
-    "3. Buat 1-3 opsi rute yang realistis dan masuk akal menggunakan moda transportasi umum (bus, KRL/kereta, MRT, angkot, dll). Hormati preferensi pengguna.\n" +
+    "3. Buat 1-3 opsi rute yang realistis dan masuk akal menggunakan moda transportasi umum (bus, KRL/kereta, MRT, angkot). Hormati preferensi pengguna.\n" +
 "4. Setiap langkah rute disusun berurutan dari berangkat sampai tiba.\n" +
-    "5. JANGAN mengarang daftar stasiun atau 'stops'. Biarkan 'stops' kosong karena backend akan mengisinya dari data stasiun KRL resmi.\n" +
+    "5. JANGAN mengarang daftar stasiun atau 'stops'. Biarkan 'stops' kosong karena backend akan mengisinya dari data Google Maps.\n" +
     "6. Jika terjadi transit/ganti kendaraan, buat langkah terpisah untuk rute lanjutan tanpa menulis daftar stasiun.\n" +
     "7. Seluruh teks menggunakan Bahasa Indonesia.\n" +
     "8. Sertakan nama lokasi yang jelas untuk 'origin' dan 'destination' (contoh: Bogor, Depok, Pasar Minggu, Universitas Indonesia) agar backend dapat mencocokkannya dengan stasiun.\n" +

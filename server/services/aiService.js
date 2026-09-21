@@ -1,46 +1,43 @@
 import { generateRouteInfo } from "./groqClient.js";
 import { buildSystemPrompt, buildUserMessage } from "../prompts/routePrompt.js";
 import { normalizeRouteResult } from "../utils/parseJson.js";
-import { matchStation, buildKrlSteps } from "./krlRouter.js";
+import { config } from "../config.js";
+import { fetchTransitRoutes } from "./googleMaps.js";
 
-const isKrlStep = (step) => String(step?.mode || "").toLowerCase() === "krl";
+function enrichRouteWithGoogleMaps(route, gmapsRoute) {
+  if (!gmapsRoute?.steps?.length) return route;
 
-function enrichRouteWithKrl(route, result, index) {
-  const steps = Array.isArray(route.steps) ? route.steps : [];
-  const hasKrl = steps.some(isKrlStep);
-
-  if (!hasKrl && index > 0) return route;
-
-  const firstStep = steps[0];
-  const lastStep = steps[steps.length - 1];
-
-  const krl = buildKrlSteps({
-    fromStation: matchStation(result.origin),
-    toStation: matchStation(result.destination),
-    departureTime: result.departureTime,
-    originText: result.origin,
-    destinationText: result.destination,
-    feederMode: firstStep && !isKrlStep(firstStep) ? firstStep.mode : "Angkutan lokal",
-    finalMode: lastStep && !isKrlStep(lastStep) ? lastStep.mode : "Angkutan lokal"
-  });
-
-  if (!krl) return route;
-
-  route.steps = krl.steps;
-  route.modes = Array.from(new Set(["KRL", "Jalan"]));
-  route.transfers = krl.transfers;
-  route.duration = krl.duration;
-  route.cost = krl.cost;
-  route.walking = krl.walking;
-  route.badge = krl.badge;
+  route.steps = gmapsRoute.steps;
+  route.modes = gmapsRoute.modes;
+  route.transfers = gmapsRoute.transfers;
+  route.duration = gmapsRoute.duration;
+  route.cost = gmapsRoute.cost;
+  route.walking = gmapsRoute.walking;
+  route.badge = "Dihitung oleh Google Maps";
 
   return route;
 }
 
-function enrichWithKrl(result) {
-  if (!result?.routes?.length) return result;
+async function enrichWithGoogleMaps(result) {
+  if (!config.googleMapsApiKey || !result?.routes?.length) return result;
 
-  result.routes = result.routes.map((route, index) => enrichRouteWithKrl(route, result, index));
+  let gmaps;
+  try {
+    gmaps = await fetchTransitRoutes({
+      originText: result.origin,
+      destinationText: result.destination,
+      departureTime: result.departureTime
+    });
+  } catch (err) {
+    console.warn(`[googleMaps] ${err.message}`);
+    return result;
+  }
+
+  if (!gmaps?.routes?.length) return result;
+
+  result.routes = result.routes.map((route, index) =>
+    enrichRouteWithGoogleMaps(route, gmaps.routes[index % gmaps.routes.length])
+  );
 
   return result;
 }
@@ -52,5 +49,11 @@ export async function analyzeRoute(payload) {
   ];
 
   const raw = await generateRouteInfo({ messages });
-  return enrichWithKrl(normalizeRouteResult(raw));
+  let result = normalizeRouteResult(raw);
+
+  if (result.clarification) return result;
+
+  result = await enrichWithGoogleMaps(result);
+
+  return result;
 }
